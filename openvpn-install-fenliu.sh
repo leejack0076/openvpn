@@ -7,11 +7,11 @@
 
 
 
-# 安装GeoIP库
+# 安装GeoIP数据库
 if [[ "$os" == "debian" || "$os" == "ubuntu" ]]; then
-    apt-get install -y geoip-database libgeoip1
+    apt-get install -y geoip-database
 elif [[ "$os" == "centos" || "$os" == "fedora" ]]; then
-    dnf install -y geoip
+    yum install -y geoip-ie  # 或 dnf install -y geoip2
 fi
 
 
@@ -615,41 +615,25 @@ cat << 'EOF' > /etc/openvpn/update-resolv-conf
 EOF
 chmod +x /etc/openvpn/update-resolv-conf
 
-# 创建route-up.sh脚本
+# 创建服务端route-up.sh脚本（需根据实际需求调整客户端IP获取方式）
 cat << 'EOF' > /etc/openvpn/route-up.sh
 #!/bin/bash
-# 获取客户端IP
-client_ip=$(env | grep -E '^ifconfig_pool_remote_ip=' | cut -d'=' -f2)
-
-# 设置国内流量直连
-ip route add 0.0.0.0/1 via $client_ip
-ip route add 128.0.0.0/1 via $client_ip
-
-# 添加国内IP段直连规则（示例，根据GeoIP库更新）
-ip route add 1.0.0.0/8 via $client_ip
-ip route add 10.0.0.0/8 via $client_ip
-# ...（继续添加国内IP段）
-
-# 设置国外流量通过VPN
-ip rule add from $client_ip/32 lookup main
-ip route add default via $client_ip table main
+# 注意：此脚本中的$client_ip变量可能无法直接获取，需根据实际情况调整
+# 示例：使用ifconfig-pool-persist文件记录客户端IP，并在此处读取
+# 或考虑使用ip rule和ip route结合mark实现路由策略
 EOF
 chmod +x /etc/openvpn/route-up.sh
 
 
 
-# 创建client-route-up.sh脚本
+# 创建客户端client-route-up.sh脚本
 cat << 'EOF' > /etc/openvpn/client-route-up.sh
 #!/bin/bash
-# 设置国内流量直连
-ip route add 0.0.0.0/1 dev tun0
-ip route add 128.0.0.0/1 dev tun0
-
-# 添加国内IP段直连规则（示例，根据GeoIP库更新）
-ip route add 1.0.0.0/8 dev tun0
-ip route add 10.0.0.0/8 dev tun0
-# ...（继续添加国内IP段）
+# 使用tun作为默认设备名（假设使用TUN设备）
+ip route add 1.0.0.0/8 dev tun  # 添加国内IP段直连规则（示例）
+# ...（继续添加其他国内IP段规则）
 EOF
 chmod +x /etc/openvpn/client-route-up.sh
+
 
 fi
