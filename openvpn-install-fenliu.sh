@@ -602,6 +602,11 @@ else
 		;;
 	esac
 
+fi
+
+
+
+
 
 
 
@@ -644,6 +649,3 @@ ip route add 1.0.0.0/8 dev $dev
 # 继续添加其他国内IP段规则
 EOF
 chmod +x /etc/openvpn/client-route-up.sh
-
-
-fi
