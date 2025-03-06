@@ -7,12 +7,16 @@
 
 
 
-# 安装GeoIP数据库
-if [[ "$os" == "debian" || "$os" == "ubuntu" ]]; then
+# 安装GeoIP数据库（确保路径和包名正确）
+if [[ "$DISTRO" == "debian"* || "$DISTRO" == "ubuntu"* ]]; then
     apt-get install -y geoip-database
-elif [[ "$os" == "centos" || "$os" == "fedora" ]]; then
-    yum install -y geoip-ie  # 或 dnf install -y geoip2
+    # 确保GeoIP数据库文件存在且路径正确
+    ln -s /usr/share/GeoIP/GeoIP.dat /etc/openvpn/
+elif [[ "$DISTRO" == "centos"* || "$DISTRO" == "fedora"* ]]; then
+    yum install -y geoip-ie  # 或使用其他适当的GeoIP包
+    # 确保GeoIP数据库文件存在且路径正确（可能需要手动下载或配置）
 fi
+
 
 
 
@@ -615,22 +619,22 @@ cat << 'EOF' > /etc/openvpn/update-resolv-conf
 EOF
 chmod +x /etc/openvpn/update-resolv-conf
 
-# 创建服务端route-up.sh脚本（需根据实际需求调整客户端IP获取方式）
+# 创建服务端route-up.sh脚本（注意：可能需要调整路由添加逻辑）
 cat << 'EOF' > /etc/openvpn/route-up.sh
 #!/bin/bash
-# 注意：此脚本中的$client_ip变量可能无法直接获取，需根据实际情况调整
-# 示例：使用ifconfig-pool-persist文件记录客户端IP，并在此处读取
-# 或考虑使用ip rule和ip route结合mark实现路由策略
+# 注意：此脚本中的路由添加逻辑可能需要根据实际情况进行调整
+# 由于$client_ip在route-up事件中可能不可用，考虑使用其他方法
+# 例如，使用ifconfig-pool-persist文件记录客户端IP，或直接在server.conf中配置静态路由
 EOF
 chmod +x /etc/openvpn/route-up.sh
 
 
 
-# 创建客户端client-route-up.sh脚本
+# 创建客户端client-route-up.sh脚本（注意：$dev应由OpenVPN自动传递）
 cat << 'EOF' > /etc/openvpn/client-route-up.sh
 #!/bin/bash
-# 使用tun作为默认设备名（假设使用TUN设备）
-ip route add 1.0.0.0/8 dev tun  # 添加国内IP段直连规则（示例）
+# $dev代表VPN隧道设备，由OpenVPN自动传递
+ip route add 1.0.0.0/8 dev $dev  # 添加国内IP段直连规则（示例）
 # ...（继续添加其他国内IP段规则）
 EOF
 chmod +x /etc/openvpn/client-route-up.sh
